@@ -6,19 +6,34 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Install system build deps required for some Python wheels (and for psycopg2)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     build-essential gcc libpq-dev curl ca-certificates \
+    libblas3 liblapack3 libopenblas-dev libomp-dev \
  && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-
-RUN python -m pip install --upgrade pip \
- && python -m pip install --no-cache-dir -r requirements.txt
-
+# Copy project files (after installs to leverage cache)
 COPY . .
 
-# Create non-root user and adjust ownership
+# Upgrade pip first
+RUN python -m pip install --upgrade pip
+
+# Install heavy / tricky packages explicitly (torch first from PyTorch index)
+# Install everything in as few pip calls as reasonable to reduce image layers.
+RUN python -m pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.8.0+cpu \
+ && python -m pip install --no-cache-dir \
+    "fastapi[standard]" \
+    pydantic-settings \
+    psycopg2-binary \
+    SQLAlchemy \
+    sentence-transformers \
+    openpyxl \
+    faiss-cpu \
+    langchain \
+    langchain-community
+
+# Create non-root user and adjust ownership (do this AFTER pip install to keep installs system-wide)
 RUN useradd --create-home --shell /bin/bash app \
  && chown -R app:app /app
 
