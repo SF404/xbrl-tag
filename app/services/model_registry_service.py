@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,6 +5,56 @@ from app.core.config import get_config
 from app.models.entities import Setting, Embedder, Reranker
 from app.services.model_download_service import ModelDownloadService
 from app.db.session import SessionLocal
+from langchain.schema import Document
+from typing import List, Any
+import numpy as np
+
+try:
+    from langchain.embeddings.base import Embeddings
+except Exception:
+    from langchain.embeddings import Embeddings
+
+class SentenceTransformerEmbedder(Embeddings):
+    def __init__(self, model):
+        self.model = model
+
+    def embed_query(self, text: str) -> List[float]:
+        vec = self.model.encode(text, convert_to_numpy=True, show_progress_bar=False)
+        return np.asarray(vec, dtype=np.float32).tolist()
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        vecs = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+        return np.asarray(vecs, dtype=np.float32).tolist()
+
+    def __call__(self, text_or_texts: Any):
+        if isinstance(text_or_texts, (list, tuple)):
+            return self.embed_documents(list(text_or_texts))
+        return self.embed_query(text_or_texts)
+
+
+class CrossEncoderReranker:
+    def __init__(self, model: str, normalize_method: str = "softmax"):
+        self.model = model
+        self.normalize_method = normalize_method
+
+    def rerank(self, query: str, docs: List[Document], top_k: int = 5):
+        pairs = [(query, d.metadata["reference"]) for d in docs]
+        raw = self.model.predict(pairs, show_progress_bar=False)
+
+        if self.normalize_method == "softmax":
+            exp_scores = np.exp(raw - np.max(raw))
+            scores = exp_scores / exp_scores.sum()
+        elif self.normalize_method == "sigmoid":
+            scores = 1 / (1 + np.exp(-raw))
+        elif self.normalize_method == "minmax":
+            min_s, max_s = np.min(raw), np.max(raw)
+            scores = (raw - min_s) / (max_s - min_s) if max_s != min_s else np.ones_like(raw) * 0.5
+        else:
+            scores = raw
+
+        ranked = list(zip(docs, scores))
+        return sorted(ranked, key=lambda x: x[1], reverse=True)[:top_k]
+
 
 
 class ModelRegistry:
@@ -25,8 +74,13 @@ class ModelRegistry:
             
             if Path(embedder_path).exists() and Path(reranker_path).exists():
                 from sentence_transformers import SentenceTransformer, CrossEncoder
-                self.embedder = SentenceTransformer(embedder_path, device="cpu")
-                self.reranker = CrossEncoder(reranker_path, device="cpu")
+                
+                embedder_model = SentenceTransformer(embedder_path, device="cpu")
+                reranker_model = CrossEncoder(reranker_path, device="cpu")
+                
+                self.embedder = SentenceTransformerEmbedder(embedder_model)
+                self.reranker = CrossEncoderReranker(reranker_model)
+                
                 print("[ModelRegistry] Models loaded from local filesystem.")
                 return
             else:
@@ -59,8 +113,8 @@ class ModelRegistry:
         model_embedder.save(str(embedder_path))
         model_reranker.save(str(reranker_path))
         
-        self.embedder = model_embedder
-        self.reranker = model_reranker
+        self.embedder = SentenceTransformerEmbedder(model_embedder)
+        self.reranker = CrossEncoderReranker(model_reranker)
 
         # Update DB with new paths (convert Path -> str before storing)
         try:
