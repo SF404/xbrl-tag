@@ -51,6 +51,10 @@ class Config(BaseSettings):
         return self.APP_ENV == "production"
     
     @property
+    def backend(self) -> str:
+        return "gcp" if self.APP_ENV == "production" else "local"
+    
+    @property
     def database_url(self) -> str:
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
