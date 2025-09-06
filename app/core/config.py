@@ -27,7 +27,7 @@ class Config(BaseSettings):
     GCP_PROJECT_ID: str = Field(..., env="GCP_PROJECT_ID")
     GCP_BUCKET_NAME: str = Field(..., env="GCP_BUCKET_NAME")
     GCP_BUCKET_PREFIX: str = Field(..., env="GCP_BUCKET_PREFIX")
-    GCP_CREDENTIALS_PATH: str = Field(..., env="GCP_CREDENTIALS_PATH")
+    GCP_CREDENTIALS_PATH: str | None = None
 
     GCP_INDEX_PATH: str = Field(..., env="GCP_INDEX_PATH")
     GCP_MODEL_PATH: str = Field(..., env="GCP_MODEL_PATH")
