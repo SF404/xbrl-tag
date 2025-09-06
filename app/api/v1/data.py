@@ -7,7 +7,7 @@ from app.schemas.taxonomy import UploadTaxonomyRequest, TaxonomyEntryRequest
 from app.services.data_service import upload_taxonomy_service, get_taxonomy_service, delete_taxonomy_service, get_entries_service, add_entry_service, update_entry_service, delete_entry_service
 
 
-router = APIRouter()
+router = APIRouter(prefix="/data")
 
 # ====== GET ========
 @router.get("/{taxonomy_id}")

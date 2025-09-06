@@ -6,16 +6,16 @@ from app.core.config import get_config
 from app.core.errors import AppException, ErrorCode
 
 
-# _index_cache: dict = {}
+_index_cache: dict = {}
 
 def load_index(taxonomy: str, embeddings) -> FAISS:
-    # if taxonomy in _index_cache:
-    #     return _index_cache[taxonomy]
+    if taxonomy in _index_cache:
+        return _index_cache[taxonomy]
 
     config = get_config()
     index_path = f"{config.index_path}/{taxonomy}"
     vs = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
-    # _index_cache[taxonomy] = vs
+    _index_cache[taxonomy] = vs
     return vs
 
 
