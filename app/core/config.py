@@ -1,48 +1,41 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from pathlib import Path
+from typing import Optional, List
 
-class Config(BaseSettings):
-    # model_config = SettingsConfigDict(
-    #     env_file=".env", 
-    #     env_file_encoding="utf-8"
-    # )
-
+class Config(BaseSettings): 
+    model_config = SettingsConfigDict(
+        env_file=".env",          
+        env_file_encoding="utf-8"
+    )
     APP_NAME: str = Field("XBRL Tag Recommender API", env="APP_NAME")
     APP_VERSION: str = Field("0.1.0", env="APP_VERSION")
-    APP_ENV: str = Field("development", env="APP_ENV") # or production
+    APP_ENV: str = Field("development", env="APP_ENV")
     API_PREFIX: str = Field("/api/v1", env="API_PREFIX")
     DEBUG: bool = Field(True, env="DEBUG")
 
-    DEVICE: str = Field("cpu", env="DEVICE") # or cuda -> dont use gpu for now
+    DEVICE: str = Field("cpu", env="DEVICE")
 
-    # Database settings
+    # Database variables
     DB_USER: str = Field(..., env="DB_USER")
     DB_PASSWORD: str = Field(..., env="DB_PASSWORD")
     DB_HOST: str = Field(..., env="DB_HOST")
     DB_PORT: int = Field(5432, env="DB_PORT")
     DB_NAME: str = Field(..., env="DB_NAME")
 
-    # GCP storage settings
-    GCP_PROJECT_ID: str = Field(..., env="GCP_PROJECT_ID")
-    GCP_BUCKET_NAME: str = Field(..., env="GCP_BUCKET_NAME")
-    GCP_BUCKET_PREFIX: str = Field(..., env="GCP_BUCKET_PREFIX")
-    GCP_CREDENTIALS_PATH: str | None = None
+    # Cloud Storage volume mount path for models (explicit mounted path)
+    MOUNTED_STORAGE_PATH: Path = Field(Path("/mnt/data"), env="MOUNTED_STORAGE_PATH")
 
-    GCP_INDEX_PATH: str = Field(..., env="GCP_INDEX_PATH")
-    GCP_MODEL_PATH: str = Field(..., env="GCP_MODEL_PATH")
+    INDEX_PATH: Optional[Path] = Field(None, env="INDEX_PATH")
+    MODEL_PATH: Optional[Path] = Field(None, env="MODEL_PATH")
 
-    # Local storage settings
-    LOCAL_STORAGE_PATH: str = Field(..., env="LOCAL_STORAGE_PATH")
-    LOCAL_INDEX_PATH: str = Field(..., env="LOCAL_INDEX_PATH")
-    LOCAL_MODEL_PATH: str = Field(..., env="LOCAL_MODEL_PATH")
-
-    # base model
+    # Base model names for download from Hugging Face
     BASE_MODEL_NAME: str = Field(..., env="BASE_MODEL_NAME")
     BASE_RERANKER_MODEL_NAME: str = Field(..., env="BASE_RERANKER_MODEL_NAME")
 
-    # misc
-    ALLOW_ORIGINS: list[str] = Field([
+    # Misc settings
+    ALLOW_ORIGINS: List[str] = Field([
         "http://localhost:3000",
         "http://localhost:5174",
         "http://localhost:8000",
@@ -58,21 +51,28 @@ class Config(BaseSettings):
         return self.APP_ENV == "production"
     
     @property
-    def backend(self) -> str:
-        return "local" if self.is_development else "gcp"
-    
-    @property
     def database_url(self) -> str:
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-    
+
+    @property
+    def model_path(self) -> Path:
+        if self.MODEL_PATH:
+            mp = Path(self.MODEL_PATH)
+            if str(self.MOUNTED_STORAGE_PATH) not in str(mp):
+                return Path(self.MOUNTED_STORAGE_PATH) / mp
+            return mp
+        return Path(self.MOUNTED_STORAGE_PATH) / "models"
+
+    @property
+    def index_path(self) -> Path:
+        if self.INDEX_PATH:
+            ip = Path(self.INDEX_PATH)
+            if str(self.MOUNTED_STORAGE_PATH) not in str(ip):
+                return Path(self.MOUNTED_STORAGE_PATH) / ip
+            return ip
+        return Path(self.MOUNTED_STORAGE_PATH) / "index"
+
+
 @lru_cache
 def get_config() -> Config:
     return Config()
-
-
-
-
-    
-
-
-
