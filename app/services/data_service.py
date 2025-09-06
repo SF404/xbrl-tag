@@ -59,6 +59,10 @@ def upload_taxonomy_service(db: Session, file_contents: bytes, filename: str, sh
     return taxonomy_obj.id
 
 
+# to get the taxonomy by symbol like (brsr, sasb)
+def get_taxonomy_by_taxonomy_name(db: Session, taxonomy: str) -> Taxonomy:
+    return db.query(Taxonomy).filter(Taxonomy.taxonomy == taxonomy).first()
+
 
 def get_taxonomy_service(db: Session, taxonomy_id: int) -> Taxonomy:
     taxonomy = db.query(Taxonomy).filter(Taxonomy.id == taxonomy_id).first()
@@ -100,3 +104,6 @@ def delete_entry_service(db: Session, entry_id: int) -> None:
         raise AppException(ErrorCode.NOT_FOUND, "Entry not found", status_code=404)
     db.delete(entry)
     db.commit()
+
+
+

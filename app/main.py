@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
+
 
 from app.core.middleware import RequestContextMiddleware
 from app.core.config import get_config
@@ -55,6 +57,10 @@ def create_app() -> FastAPI:
         router=api_router,
         prefix=config.API_PREFIX,
     )
+    
+    @app.get("/")
+    def root():
+        return RedirectResponse(url="/api/v1/health")
 
     return app
 
