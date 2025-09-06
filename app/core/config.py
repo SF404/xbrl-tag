@@ -3,10 +3,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8"
-    )
+    # model_config = SettingsConfigDict(
+    #     env_file=".env", 
+    #     env_file_encoding="utf-8"
+    # )
 
     APP_NAME: str = Field("XBRL Tag Recommender API", env="APP_NAME")
     APP_VERSION: str = Field("0.1.0", env="APP_VERSION")
