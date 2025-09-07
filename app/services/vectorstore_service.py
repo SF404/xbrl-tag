@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 
@@ -10,6 +10,7 @@ from app.core.index_cache import index_cache
 class VectorstoreService:    
     def __init__(self):
         self.config = get_config()
+        self._embed_dim: Optional[int] = None
         
     
     def load_index(self, taxonomy: str, embeddings) -> FAISS:
@@ -23,25 +24,27 @@ class VectorstoreService:
             )
         
         return vectorstore
-    
-    
+
+
     def _validate_embedding_compatibility(self, vectorstore: FAISS, embedder) -> None:
-        q_vec = embedder.embed_query("test")
-        
-        if q_vec is None:
-            raise AppException(
-                ErrorCode.MODEL_NOT_LOADED, 
-                "Embedder returned None for query embedding.", 
-                status_code=500
-            )
-        
-        if vectorstore.index.d != len(q_vec):
+        if self._embed_dim is None:
+            q_vec = embedder.embed_query("test")
+            if q_vec is None:
+                raise AppException(
+                    ErrorCode.MODEL_NOT_LOADED,
+                    "Embedder returned None for query embedding.",
+                    status_code=500
+                )
+            self._embed_dim = len(q_vec)
+
+        if vectorstore.index.d != self._embed_dim:
             raise AppException(
                 ErrorCode.DIMENSION_MISMATCH,
-                f"Index dim ({vectorstore.index.d}) != embedder dim ({len(q_vec)}). "
+                f"Index dim ({vectorstore.index.d}) != embedder dim ({self._embed_dim}). "
                 f"Rebuild the index with the active embedder.",
                 status_code=409,
             )
+
             
     
     def _perform_similarity_search(self, vectorstore: FAISS, query: str, k: int) -> List[Tuple[Document, float]]:
@@ -90,7 +93,7 @@ class VectorstoreService:
         self._validate_embedding_compatibility(vectorstore, registry.embedder)
         
         # Determine search parameters
-        k_search = max(req.k * 5, req.k) if req.rerank else req.k
+        k_search = max(req.k * 3, req.k) if req.rerank else req.k
         
         # Perform similarity search
         docs_with_scores = self._perform_similarity_search(vectorstore, req.query, k_search)

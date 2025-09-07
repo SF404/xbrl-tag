@@ -6,7 +6,7 @@ from app.models.entities import Setting, Embedder, Reranker
 from app.services.model_download_service import ModelDownloadService
 from app.db.session import SessionLocal
 from langchain.schema import Document
-from typing import List, Any
+from typing import List, Any, Tuple
 import numpy as np
 
 try:
@@ -193,4 +193,22 @@ class ModelRegistry:
             except Exception:
                 pass
             print(f"[ModelRegistry] Error updating DB: {e}")
+            
+            
+    def get_active_model_paths(self, db: Session) -> Tuple[str, str]:
+        settings = db.query(Setting).first()
+        if not settings or not settings.embedder or not settings.reranker:
+            raise RuntimeError("[ModelRegistry] Active models are not configured in DB.")
+        return settings.embedder.path, settings.reranker.path
+    
+    
+    def load_models_from_local(self, embedder_dir: Path, reranker_dir: Path) -> None:
+        from sentence_transformers import SentenceTransformer, CrossEncoder
+
+        embedder_model = SentenceTransformer(str(embedder_dir), device="cpu")
+        reranker_model = CrossEncoder(str(reranker_dir), device="cpu")
+
+        self.embedder = SentenceTransformerEmbedder(embedder_model)
+        self.reranker = CrossEncoderReranker(reranker_model)
+        print("[ModelRegistry] Models loaded from local copies.")
 
