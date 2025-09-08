@@ -11,6 +11,7 @@ from app.repositories.taxonomy import TaxonomyRepository
 from app.repositories.taxonomy_entry import TaxonomyEntryRepository
 from app.jobs.manager import JobsManager
 
+
 logger = logging.getLogger(__name__)
 
 
