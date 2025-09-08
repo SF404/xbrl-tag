@@ -51,7 +51,8 @@ def build_index_async(job_id: str, taxonomy: str, registry, jobs: JobsManager) -
             texts: List[str] = []
             metas: List[dict] = []
             for e in entries:
-                texts.append(f"{e.tag} {e.reference or ''}".strip())
+                # texts.append(f"{e.tag} {e.reference or ''}".strip())
+                texts.append(f"{e.reference or ''}".strip())
                 metas.append({
                     "tag": e.tag,
                     "datatype": e.datatype or "",
