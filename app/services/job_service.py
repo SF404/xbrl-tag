@@ -1,7 +1,6 @@
+import logging
 from typing import List, Optional
 from pathlib import Path
-import logging
-
 from sqlalchemy.orm import Session
 from langchain_community.vectorstores import FAISS
 
