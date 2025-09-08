@@ -1,18 +1,25 @@
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.models.entities import Reranker
+
+from app.models import Reranker
+from app.repositories import RerankerRepository
 
 
-def list_rerankers(db: Session):
-    return db.query(Reranker).all()
+class RerankerService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.repo = RerankerRepository(db)
 
+    def list(self) -> List:
+        return self.repo.list()
 
-def get_reranker(db: Session, rid: int):
-    return db.query(Reranker).filter(Reranker.id == rid).first()
-
-
-def delete_reranker(db: Session, rid: int):
-    obj = get_reranker(db, rid)
-    if obj:
-        db.delete(obj)
-        db.commit()
-    return obj
+    def delete(self, rid: int) -> Optional[Reranker]:
+        obj = self.get(rid)
+        if obj:
+            try:
+                self.repo.delete(obj)
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
+                raise
+        return obj

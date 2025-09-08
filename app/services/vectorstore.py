@@ -1,30 +1,30 @@
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any
+import logging
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 
 from app.core.config import get_config
 from app.core.errors import AppException, ErrorCode
 from app.core.index_cache import index_cache
+from app.services.model_registry import ModelRegistry
+from app.utils import warm_taxonomy
 
+logger = logging.getLogger(__name__)
 
-class VectorstoreService:    
+class VectorstoreService:
     def __init__(self):
         self.config = get_config()
-        self._embed_dim: Optional[int] = None
-        
-    
+        self._embed_dim = None
+
     def load_index(self, taxonomy: str, embeddings) -> FAISS:
         vectorstore = index_cache.get(taxonomy, embeddings)
-        
         if not vectorstore:
             raise AppException(
                 ErrorCode.INDEX_NOT_FOUND,
                 f"FAISS index for taxonomy '{taxonomy}' was not found.",
                 status_code=404,
             )
-        
         return vectorstore
-
 
     def _validate_embedding_compatibility(self, vectorstore: FAISS, embedder) -> None:
         if self._embed_dim is None:
@@ -38,6 +38,10 @@ class VectorstoreService:
             self._embed_dim = len(q_vec)
 
         if vectorstore.index.d != self._embed_dim:
+            logger.warning(
+                "Embedding dimension mismatch; rebuild required",
+                extra={"index_dim": vectorstore.index.d, "embedder_dim": self._embed_dim},
+            )
             raise AppException(
                 ErrorCode.DIMENSION_MISMATCH,
                 f"Index dim ({vectorstore.index.d}) != embedder dim ({self._embed_dim}). "
@@ -45,19 +49,13 @@ class VectorstoreService:
                 status_code=409,
             )
 
-            
-    
-    def _perform_similarity_search(self, vectorstore: FAISS, query: str, k: int) -> List[Tuple[Document, float]]:
+    def _perform_similarity_search(self, vectorstore: FAISS, query: str, k: int):
         return vectorstore.similarity_search_with_score(query, k=k)
-    
-    
-    def _format_search_results(self, docs_with_scores: List[Tuple[Document, float]], 
-                             use_rerank_score: bool = False) -> List[Dict[str, Any]]:
+
+    def _format_search_results(self, docs_with_scores: List[Tuple[Document, float]], use_rerank_score: bool = False):
         results = []
         for i, (doc, score) in enumerate(docs_with_scores):
-            # Convert FAISS distance to similarity score if not reranked
             formatted_score = float(score) if use_rerank_score else float(1 / (1 + score))
-            
             result = {
                 "tag": doc.metadata["tag"],
                 "datatype": doc.metadata["datatype"],
@@ -66,51 +64,46 @@ class VectorstoreService:
                 "rank": i + 1,
             }
             results.append(result)
-        
         return results
-    
-    def _apply_reranking(self, query: str, docs_with_scores: List[Tuple[Document, float]], 
-                        reranker, top_k: int) -> List[Tuple[Document, float]]:
-        """Apply reranking to search results"""
+
+    def _apply_reranking(self, query: str, docs_with_scores: List[Tuple[Document, float]], reranker, top_k: int):
         docs_only = [doc for doc, _ in docs_with_scores]
         reranked = reranker.rerank(query, docs_only, top_k=top_k)
         return reranked
-    
+
     def query(self, req, registry) -> Tuple[str, str, List[Dict[str, Any]]]:
-        # Load vectorstore
+        logger.info("Vector query", extra={"taxonomy": req.taxonomy, "k": req.k, "rerank": req.rerank})
         try:
             vectorstore = self.load_index(req.taxonomy, registry.embedder)
         except Exception as e:
             if isinstance(e, AppException):
+                logger.error("Failed to load index", extra={"taxonomy": req.taxonomy}, exc_info=True)
                 raise
+            logger.error("Unexpected error loading index", extra={"taxonomy": req.taxonomy}, exc_info=True)
             raise AppException(
                 ErrorCode.INDEX_NOT_FOUND,
                 f"Failed to load index for taxonomy '{req.taxonomy}': {str(e)}",
                 status_code=404,
             )
-        
-        # Validate embedding compatibility
+
         self._validate_embedding_compatibility(vectorstore, registry.embedder)
-        
-        # Determine search parameters
         k_search = max(req.k * 3, req.k) if req.rerank else req.k
-        
-        # Perform similarity search
         docs_with_scores = self._perform_similarity_search(vectorstore, req.query, k_search)
-        
-        # Apply reranking if requested
+
         if req.rerank:
-            reranked_results = self._apply_reranking(
-                req.query, docs_with_scores, registry.reranker, req.k
-            )
+            reranked_results = self._apply_reranking(req.query, docs_with_scores, registry.reranker, req.k)
             results = self._format_search_results(reranked_results, use_rerank_score=True)
         else:
-            # Limit to requested k for non-reranked results
             limited_results = docs_with_scores[:req.k]
             results = self._format_search_results(limited_results, use_rerank_score=False)
-        
+
+        logger.info("Vector query completed", extra={"taxonomy": req.taxonomy, "returned": len(results)})
         return req.query, req.taxonomy, results
 
-
-# Global service instance
-vectorstore_service = VectorstoreService()
+    def warm_all_disk_indices(self, registry: ModelRegistry):
+        taxes = index_cache.disk_indices
+        for tax in taxes:
+            try:
+                warm_taxonomy(tax, registry)
+            except Exception as e:
+                logger.warning("Warmup skipped for taxonomy", extra={"taxonomy": tax, "error": str(e)})

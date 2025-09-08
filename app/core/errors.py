@@ -23,6 +23,7 @@ class ErrorCode(str, Enum):
     FILE_VALIDATION_ERROR = "FILE_VALIDATION_ERROR"
     NOT_FOUND = "NOT_FOUND"
     INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR"
+    CONFLICT = "CONFLICT"
 
 
 class AppException(Exception):

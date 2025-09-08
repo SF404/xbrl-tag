@@ -1,0 +1,69 @@
+Folder PATH listing
+Volume serial number is 2AE4-36AD
+C:\USERS\SUHAI\DESKTOP\A_XBRL_\APP
+|   main.py
+|   
++---api
+|   |   router.py
+|   |   
+|   \---v1
+|           data.py
+|           jobs.py
+|           models.py
+|           query.py
+|           system.py
+|           
++---core
+|       config.py
+|       deps.py
+|       errors.py
+|       index_cache.py
+|       logging.py
+|       middleware.py
+|       
++---db
+|       session.py
+|       
++---jobs
+|       manager.py
+|       
++---models
+|       entities.py
+|       __init__.py
+|       
++---repositories
+|       base.py
+|       embedder.py
+|       feedback.py
+|       reranker.py
+|       setting.py
+|       taxonomy.py
+|       taxonomy_entry.py
+|       __init__.py
+|       
++---schemas
+|       common.py
+|       embedder.py
+|       feedback.py
+|       jobs.py
+|       query.py
+|       reranker.py
+|       settings.py
+|       taxonomy.py
+|       
++---services
+|       embedder_service.py
+|       job_service.py
+|       model_registry.py
+|       reranker_service.py
+|       taxonomy_service.py
+|       vectorstore.py
+|       __init__.py
+|       
+\---utils
+        copy_dir.py
+        download_base_models.py
+        validate_and_parse_excel.py
+        warm_taxonomy.py
+        __init__.py
+        

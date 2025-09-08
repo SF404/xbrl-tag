@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system build deps required for some Python wheels (and for psycopg2)
+# Install system build deps required for some Python wheels
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     build-essential gcc libpq-dev curl ca-certificates \
@@ -31,7 +31,8 @@ RUN python -m pip install --no-cache-dir --index-url https://download.pytorch.or
     openpyxl \
     faiss-cpu \
     langchain \
-    langchain-community
+    langchain-community \
+    alembic
 
 # Create non-root user and adjust ownership (do this AFTER pip install to keep installs system-wide)
 RUN useradd --create-home --shell /bin/bash app \

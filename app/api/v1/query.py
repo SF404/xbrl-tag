@@ -1,27 +1,18 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.query import QueryRequest, QueryResponse, QueryResult
-from app.core.deps import get_registry
-from app.services.vectorstore_service import vectorstore_service
-
+from app.core.deps import get_registry, get_vectorstore_service
+from app.core.errors import AppException, ErrorCode
+from app.schemas.schemas import QueryRequest, QueryResponse, QueryResult
 
 router = APIRouter()
 
 @router.post("/query", response_model=QueryResponse)
-def query(req: QueryRequest, registry=Depends(get_registry)) -> QueryResponse:
-    query_text, taxonomy, raw_results = vectorstore_service.query(req, registry)
-    results = [
-        QueryResult(
-            tag=r["tag"],
-            datatype=r["datatype"],
-            reference=r["reference"],
-            score=r["score"],
-            rank=r["rank"],
-        )
-        for r in raw_results
-    ]
-
-    return QueryResponse(query=query_text, taxonomy=taxonomy, results=results)
-
-
-
+def query(
+    req: QueryRequest,
+    registry = Depends(get_registry),
+    vectorstore = Depends(get_vectorstore_service),
+):
+    if not registry.embedder:
+        raise AppException(ErrorCode.MODEL_NOT_LOADED, "Active embedder not loaded", status_code=500)
+    q, tax, results = vectorstore.query(req, registry)
+    return QueryResponse(query=q, taxonomy=tax, results=[QueryResult(**r) for r in results])

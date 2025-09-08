@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db.session import Base
+from app.db.session import Base
 
 
 class Setting(Base):
@@ -41,19 +41,30 @@ class Reranker(Base):
 class Taxonomy(Base):
     __tablename__ = "taxonomies"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
+    sheet_name = Column(String)
     taxonomy = Column(String, unique=True)
     description = Column(Text)
     source_file = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    entries = relationship("TaxonomyEntry", back_populates="taxonomy")
-    feedbacks = relationship("Feedback", back_populates="taxonomy")
+
+    entries = relationship(
+        "TaxonomyEntry",
+        back_populates="taxonomy",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    feedbacks = relationship(
+        "Feedback",
+        back_populates="taxonomy",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class TaxonomyEntry(Base):
     __tablename__ = "taxonomy_entries"
     id = Column(Integer, primary_key=True, index=True)
-    taxonomy_id = Column(Integer, ForeignKey("taxonomies.id"))
+    taxonomy_id = Column(Integer, ForeignKey("taxonomies.id", ondelete="CASCADE"))
     tag = Column(String)
     datatype = Column(String)
     reference = Column(Text)
@@ -64,7 +75,7 @@ class TaxonomyEntry(Base):
 class Feedback(Base):
     __tablename__ = "feedbacks"
     id = Column(Integer, primary_key=True, index=True)
-    taxonomy_id = Column(Integer, ForeignKey("taxonomies.id"))
+    taxonomy_id = Column(Integer, ForeignKey("taxonomies.id", ondelete="CASCADE"))
     query = Column(Text)
     reference = Column(Text)
     tag = Column(String)
@@ -73,3 +84,4 @@ class Feedback(Base):
     rank = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     taxonomy = relationship("Taxonomy", back_populates="feedbacks")
+

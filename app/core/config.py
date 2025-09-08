@@ -9,6 +9,7 @@ class Config(BaseSettings):
         env_file=".env",          
         env_file_encoding="utf-8"
     )
+    
     APP_NAME: str = Field("XBRL Tag Recommender API", env="APP_NAME")
     APP_VERSION: str = Field("0.1.0", env="APP_VERSION")
     APP_ENV: str = Field("development", env="APP_ENV")
@@ -26,6 +27,7 @@ class Config(BaseSettings):
 
     # Cloud Storage volume mount path for models (explicit mounted path)
     MOUNTED_STORAGE_PATH: Path = Field(Path("/mnt/data"), env="MOUNTED_STORAGE_PATH")
+    RUNTIME_STORAGE_PATH: Path = Field(Path("/tmp/data"), env="RUNTIME_STORAGE_PATH")
 
     INDEX_PATH: Optional[Path] = Field(None, env="INDEX_PATH")
     MODEL_PATH: Optional[Path] = Field(None, env="MODEL_PATH")
@@ -75,6 +77,24 @@ class Config(BaseSettings):
                 return Path(self.MOUNTED_STORAGE_PATH) / ip
             return ip
         return Path(self.MOUNTED_STORAGE_PATH) / "index"
+    
+    @property
+    def runtime_model_path(self) -> Path:
+        if self.MODEL_PATH:
+            mp = Path(self.MODEL_PATH)
+            if str(self.RUNTIME_STORAGE_PATH) not in str(mp):
+                return Path(self.RUNTIME_STORAGE_PATH) / mp
+            return mp
+        return Path(self.RUNTIME_STORAGE_PATH) / "models"
+
+    @property
+    def runtime_index_path(self) -> Path:
+        if self.INDEX_PATH:
+            ip = Path(self.INDEX_PATH)
+            if str(self.RUNTIME_STORAGE_PATH) not in str(ip):
+                return Path(self.RUNTIME_STORAGE_PATH) / ip
+            return ip
+        return Path(self.RUNTIME_STORAGE_PATH) / "index"
 
 
 @lru_cache
