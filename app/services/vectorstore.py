@@ -87,7 +87,7 @@ class VectorstoreService:
             )
 
         self._validate_embedding_compatibility(vectorstore, registry.embedder)
-        k_search = max(req.k * 3, req.k) if req.rerank else req.k
+        k_search = max(req.k * 5, req.k) if req.rerank else req.k
         docs_with_scores = self._perform_similarity_search(vectorstore, req.query, k_search)
 
         if req.rerank:
