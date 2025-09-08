@@ -15,9 +15,8 @@ try:
     from langchain.embeddings.base import Embeddings
 except Exception:
     from langchain.embeddings import Embeddings
-    
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class SentenceTransformerEmbedder(Embeddings):
@@ -68,55 +67,58 @@ class ModelRegistry:
         self.embedder = None
         self.reranker = None
 
-
     def load_models_from_path(self, embedder_dir: Path, reranker_dir: Path) -> None:
         from sentence_transformers import SentenceTransformer, CrossEncoder
 
-        embedder_model = SentenceTransformer(str(embedder_dir), device="cpu")
-        reranker_model = CrossEncoder(str(reranker_dir), device="cpu")
+        try:
+            logger.info("Loading models from path", extra={"embedder_dir": str(embedder_dir), "reranker_dir": str(reranker_dir)})
+            embedder_model = SentenceTransformer(str(embedder_dir), device="cpu")
+            reranker_model = CrossEncoder(str(reranker_dir), device="cpu")
 
-        self.embedder = SentenceTransformerEmbedder(embedder_model)
-        self.reranker = CrossEncoderReranker(reranker_model)
-        logger.info("Models loaded from local copies.")
-        
-        
+            self.embedder = SentenceTransformerEmbedder(embedder_model)
+            self.reranker = CrossEncoderReranker(reranker_model)
+
+            logger.info("Models loaded from local copies.")
+        except Exception as e:
+            logger.error("Error loading models from path", exc_info=True)
+            raise RuntimeError("Failed to load models from path.") from e
+
     def copy_active_models_to_local_runtime_and_load(self, db: Session):
         settings_repo = SettingRepository(db)
         setting = settings_repo.get_current()
 
         # First-time initialization and safety check
         if not setting or not setting.embedder or not setting.reranker or not Path(setting.embedder.path).exists() or not Path(setting.reranker.path).exists():
-            logger.info("Model paths missing or not configured. Attempting to fresh download and save.")
+            logger.info("Model paths missing or not configured. Attempting fresh download and save.")
             if not self._download_and_save(db):
+                logger.error("Failed to initialize models. Check logs for details.")
                 raise RuntimeError("Failed to initialize models. Check logs for details.")
-            
+
             # Refresh the setting object after a successful download
             setting = settings_repo.get_current()
 
         try:
             active_embedder_path = Path(setting.embedder.path)
             active_reranker_path = Path(setting.reranker.path)
-            
+
             runtime_active_embedder_path = self.config.runtime_model_path / "active_embedder"
             runtime_active_reranker_path = self.config.runtime_model_path / "active_reranker"
-            
+
             copy_dir(active_embedder_path, runtime_active_embedder_path)
             copy_dir(active_reranker_path, runtime_active_reranker_path)
-            
+
             self.load_models_from_path(runtime_active_embedder_path, runtime_active_reranker_path)
-            
+
             logger.info("Models successfully loaded from local copies.")
-        
         except Exception as e:
-            logger.error(f"An error occurred during model copying or loading: {e}")
+            logger.error("Error during model copying or loading", exc_info=True)
             raise RuntimeError("Failed to copy or load models into runtime.") from e
-                
-        
-    
+
     def _download_and_save(self, db: Session) -> bool:
         from sentence_transformers import SentenceTransformer, CrossEncoder
-        
+
         try:
+            logger.info("Downloading and saving models")
             model_embedder = SentenceTransformer(self.config.BASE_MODEL_NAME)
             model_reranker = CrossEncoder(self.config.BASE_RERANKER_MODEL_NAME)
 
@@ -150,12 +152,12 @@ class ModelRegistry:
                     embedder_entry = embed_repo.create(name=self.config.BASE_MODEL_NAME, version="1.0", path=embedder_path_str, is_active=True)
                     db.flush()
                     existing_setting.active_embedder_id = embedder_entry.id
-                
+
                 if not reranker_entry:
                     reranker_entry = rer_repo.create(name=self.config.BASE_RERANKER_MODEL_NAME, version="1.0", path=reranker_path_str, normalize_method="default", is_active=True)
                     db.flush()
                     existing_setting.active_reranker_id = reranker_entry.id
-                
+
                 # Update paths in case they were downloaded to a new location
                 embedder_entry.path = embedder_path_str
                 reranker_entry.path = reranker_path_str
@@ -164,7 +166,7 @@ class ModelRegistry:
                 db.add(reranker_entry)
                 db.add(existing_setting)
                 db.commit()
-                
+
                 logger.info("Existing Setting updated with new model paths.")
             else:
                 embedder_entry = embed_repo.create(name=self.config.BASE_MODEL_NAME, version="1.0", path=embedder_path_str, is_active=True)
@@ -173,7 +175,7 @@ class ModelRegistry:
                 new_setting = Setting(active_embedder_id=embedder_entry.id, active_reranker_id=reranker_entry.id)
                 db.add(new_setting)
                 db.commit()
-                
+
                 logger.info("Created new Embedder/Reranker and Setting rows.")
 
             return True
@@ -182,8 +184,8 @@ class ModelRegistry:
                 db.rollback()
             except Exception:
                 pass
-            logger.error(f"Error updating DB: {e}")
+            logger.error("Error updating DB", exc_info=True)
             return False
         except Exception as e:
-            logger.error(f"An unexpected error occurred during download/save: {e}")
+            logger.error("An unexpected error occurred during download/save", exc_info=True)
             return False
