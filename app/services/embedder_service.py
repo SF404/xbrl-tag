@@ -1,3 +1,5 @@
+import shutil
+from pathlib import Path
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
@@ -9,7 +11,7 @@ class EmbedderService:
         self.db = db
         self.repo = EmbedderRepository(db)
 
-    def list(self) -> List:
+    def list(self) -> List[Embedder]:
         return self.repo.list()
 
     def delete(self, embedder_id: int) -> Optional[Embedder]:
@@ -18,7 +20,13 @@ class EmbedderService:
             try:
                 self.repo.delete(obj)
                 self.db.commit()
+
+                embedder_path = Path(obj.path)
+                if embedder_path.exists() and embedder_path.is_dir():
+                    shutil.rmtree(embedder_path)
+
             except Exception:
                 self.db.rollback()
                 raise
+            
         return obj

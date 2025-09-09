@@ -3,7 +3,7 @@ from .embedder_service import EmbedderService
 from .reranker_service import RerankerService
 from .model_registry import ModelRegistry
 from .vectorstore import VectorstoreService
-from .job_service import build_index_async
+from .job_service import build_index_async, finetune_embedder_async, finetune_reranker_async
 
 __all__ = [
     "TaxonomyService",
@@ -12,5 +12,8 @@ __all__ = [
     "ModelRegistry",
     "VectorstoreService",
     "vectorstore",
-    "build_index_async"
+    "build_index_async",
+    "finetune_embedder_async",
+    "finetune_reranker_async"
+    
 ]

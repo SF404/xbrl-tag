@@ -16,8 +16,9 @@ from app.schemas.schemas import (
     FeedbackListQuery,
 )
 
-router = APIRouter(prefix="/feedback")
 logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/feedback")
 
 
 @router.get("", response_model=List[FeedbackResponse])

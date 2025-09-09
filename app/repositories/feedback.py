@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import date, timedelta, datetime
 
 from .base import BaseRepository
@@ -7,6 +7,7 @@ from app.models import Feedback
 class FeedbackRepository(BaseRepository):
     def get(self, id: int) -> Optional[Feedback]:
         return self.db.query(Feedback).get(id)
+    
 
     def list_by_taxonomy(self, taxonomy_id: int, offset: int = 0, limit: int = 200) -> List[Feedback]:
         return (
@@ -19,14 +20,16 @@ class FeedbackRepository(BaseRepository):
         )
 
 
+
     def list_filtered(
-        self,
-        taxonomy_id: Optional[int],
-        date_from: Optional[date],
-        date_to: Optional[date],
-        offset: int = 0,
-        limit: int = 200,
-    ) -> List[Feedback]:
+            self,
+            taxonomy_id: Optional[int],
+            date_from: Optional[date],
+            date_to: Optional[date],
+            pagination: bool = True,
+            offset: int = 0,
+            limit: int = 200,
+        ) -> List[Feedback]:
         q = self.db.query(Feedback)
 
         if taxonomy_id is not None:
@@ -42,12 +45,17 @@ class FeedbackRepository(BaseRepository):
             end = datetime.combine(date_to + timedelta(days=1), datetime.min.time())
             q = q.filter(Feedback.created_at < end)
 
-        return (
-            q.order_by(Feedback.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        # Apply pagination if the flag is True
+        if pagination:
+            return (
+                q.order_by(Feedback.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
+        else:
+            return q.order_by(Feedback.created_at.desc()).all()
+
 
 
     def create(

@@ -161,3 +161,17 @@ class FeedbackListQuery(BaseModel):
 # -------- Misc
 class MessageResponse(BaseModel):
     message: str
+    
+# --------- Training 
+
+class FineTuneEmbedderRequest(BaseModel):
+    embedder_id: int
+    date_from: Optional[date] = Field(None, description="YYYY-MM-DD")
+    date_to: Optional[date] = Field(None, description="YYYY-MM-DD")
+    
+class FineTuneRerankerRequest(BaseModel):
+    reranker_id: int
+    date_from: Optional[date] = Field(None, description="YYYY-MM-DD")
+    date_to: Optional[date] = Field(None, description="YYYY-MM-DD")
+    
+    
