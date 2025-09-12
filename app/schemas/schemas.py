@@ -175,3 +175,11 @@ class FineTuneRerankerRequest(BaseModel):
     date_to: Optional[date] = Field(None, description="YYYY-MM-DD")
     
     
+# --------- Chatbot
+
+class ChatRequest(BaseModel):
+    prompt: str = Field("I'm new on this platform.", description="User prompt / question")
+
+
+class ChatResponse(BaseModel):
+    text: str  

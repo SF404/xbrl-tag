@@ -15,6 +15,7 @@ class Config(BaseSettings):
     APP_ENV: str = Field("development", env="APP_ENV")
     API_PREFIX: str = Field("/api/v1", env="API_PREFIX")
     DEBUG: bool = Field(True, env="DEBUG")
+    HF_TOKEN: str = Field(..., env="HF_TOKEN")
 
     DEVICE: str = Field("cpu", env="DEVICE")
 
@@ -35,6 +36,12 @@ class Config(BaseSettings):
     # Base model names for download from Hugging Face
     BASE_MODEL_NAME: str = Field(..., env="BASE_MODEL_NAME")
     BASE_RERANKER_MODEL_NAME: str = Field(..., env="BASE_RERANKER_MODEL_NAME")
+    
+    # Chatbot Configuration
+    GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
+    GEMINI_MODEL: str = Field("gemini-2.5-flash", env="GEMINI_MODEL") 
+    GEMINI_TEMPERATURE: float = Field(0.3, env="GEMINI_TEMPERATURE") 
+    GEMINI_THINKING: int = Field(-1, env="GEMINI_THINKING") 
 
     # Misc settings
     ALLOW_ORIGINS: List[str] = Field([

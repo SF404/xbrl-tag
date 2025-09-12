@@ -7,4 +7,6 @@ gcp_credentials/
 __pycache__
 __pycache__/
 temp.py
+.env
+
 
