@@ -41,6 +41,7 @@ class Config(BaseSettings):
     GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
     GEMINI_MODEL: str = Field("gemini-2.5-flash", env="GEMINI_MODEL") 
     GEMINI_TEMPERATURE: float = Field(0.3, env="GEMINI_TEMPERATURE") 
+    GEMINI_MAX_OUTPUT_TOKEN: int = Field(150, env="GEMINI_MAX_OUTPUT_TOKEN") 
     GEMINI_THINKING: int = Field(-1, env="GEMINI_THINKING") 
 
     # Misc settings
