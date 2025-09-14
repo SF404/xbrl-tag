@@ -11,7 +11,7 @@ from app.api.router import api_router
 from app.db.session import SessionLocal
 from app.db.migrate import run_migrations
 from app.services import ModelRegistry, VectorstoreService
-from app.jobs.manager import JobsManager
+from app.managers.jobs_manager import JobsManager
 
 
 @asynccontextmanager

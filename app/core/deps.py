@@ -3,7 +3,7 @@ from fastapi import Request
 from app.db.session import SessionLocal
 from app.services import ModelRegistry
 from app.services import VectorstoreService
-from app.jobs.manager import JobsManager
+from app.managers.jobs_manager import JobsManager
 
 
 def get_db() -> Generator:

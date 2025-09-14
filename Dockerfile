@@ -34,7 +34,7 @@ RUN python -m pip install --no-cache-dir --index-url https://download.pytorch.or
     langchain-community \
     alembic \
     datasets \
-    google-genai
+    langchain-google-genai
 
 # Create non-root user and adjust ownership (do this AFTER pip install to keep installs system-wide)
 RUN useradd --create-home --shell /bin/bash app \

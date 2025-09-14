@@ -179,7 +179,17 @@ class FineTuneRerankerRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     prompt: str = Field("I'm new on this platform.", description="User prompt / question")
+    session_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
-    text: str  
+    text: str
+    session_id: Optional[str] = None
+
+
+class ChatWidgetResponse(BaseModel):
+    success: bool
+    text: str
+    formatted_response: str
+    timestamp: str
+    session_id: Optional[str] = None

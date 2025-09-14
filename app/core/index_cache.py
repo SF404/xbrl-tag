@@ -8,9 +8,7 @@ from app.core.config import get_config
 from app.core.errors import AppException, ErrorCode
 
 
-class IndexCache:
-    """Index cache manager for FAISS vector stores"""
-    
+class IndexCache:    
     def __init__(self):
         self._cache: Dict[str, FAISS] = {}
         self._config = get_config()

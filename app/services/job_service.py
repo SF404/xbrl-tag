@@ -16,7 +16,7 @@ from app.repositories.taxonomy_entry import TaxonomyEntryRepository
 from app.repositories.feedback import FeedbackRepository
 from app.repositories.embedder import EmbedderRepository
 from app.repositories.reranker import RerankerRepository
-from app.jobs.manager import JobsManager
+from app.managers.jobs_manager import JobsManager
 
 logger = logging.getLogger(__name__)
 
