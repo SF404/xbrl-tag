@@ -5,9 +5,8 @@ from langchain_community.vectorstores import FAISS
 
 from app.core.config import get_config
 from app.core.errors import AppException, ErrorCode
-from app.core.index_cache import index_cache
+from app.managers.index_cache_manager import index_cache
 from app.services.model_registry import ModelRegistry
-from app.utils import warm_taxonomy
 
 logger = logging.getLogger(__name__)
 
@@ -100,10 +99,25 @@ class VectorstoreService:
         logger.info("Vector query completed", extra={"taxonomy": req.taxonomy, "returned": len(results)})
         return req.query, req.taxonomy, results
 
+    def warm_taxonomy(self, taxonomy: str, registry: ModelRegistry) -> None:
+        # force load taxonomy
+        vs = index_cache.load(taxonomy, registry.embedder, force_reload=True)
+        
+        # Ensure first encode path is hot
+        _ = registry.embedder.embed_query("warmup")
+        
+        # Touch FAISS
+        _ = vs.similarity_search_with_score("warmup", k=1)
+        
+        # Touch reranker if present
+        if registry.reranker:
+            dummy = [Document(page_content="", metadata={"reference": "warmup-ref"})]
+            _ = registry.reranker.rerank("warmup", dummy, top_k=1)
+
     def warm_all_disk_indices(self, registry: ModelRegistry):
         taxes = index_cache.disk_indices
         for tax in taxes:
             try:
-                warm_taxonomy(tax, registry)
+                self.warm_taxonomy(tax, registry)
             except Exception as e:
                 logger.warning("Warmup skipped for taxonomy", extra={"taxonomy": tax, "error": str(e)})

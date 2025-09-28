@@ -1,6 +1,8 @@
 from typing import List, Optional
+
 from .base import BaseRepository
 from app.models.entities import Embedder
+
 
 class EmbedderRepository(BaseRepository):
     def get(self, id: int) -> Optional[Embedder]:

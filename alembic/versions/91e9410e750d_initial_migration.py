@@ -1,8 +1,8 @@
-"""init schema
+"""Initial migration
 
-Revision ID: 5fcd1f91160d
+Revision ID: 91e9410e750d
 Revises: 
-Create Date: 2025-09-07 23:35:37.371807
+Create Date: 2025-09-28 17:21:47.396943
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5fcd1f91160d'
+revision: str = '91e9410e750d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -44,7 +44,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_rerankers_id'), 'rerankers', ['id'], unique=False)
     op.create_table('taxonomies',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=True),
+    sa.Column('sheet_name', sa.String(), nullable=True),
     sa.Column('taxonomy', sa.String(), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('source_file', sa.String(), nullable=True),

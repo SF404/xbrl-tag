@@ -6,28 +6,34 @@ from app.db.session import Base
 
 class Setting(Base):
     __tablename__ = "settings"
+
     id = Column(Integer, primary_key=True, index=True)
     active_embedder_id = Column(Integer, ForeignKey("embedders.id"))
     active_reranker_id = Column(Integer, ForeignKey("rerankers.id"))
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Relationships
     embedder = relationship("Embedder", back_populates="settings")
     reranker = relationship("Reranker", back_populates="settings")
 
 
 class Embedder(Base):
     __tablename__ = "embedders"
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     version = Column(String)
     path = Column(Text)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
     settings = relationship("Setting", back_populates="embedder")
 
 
 class Reranker(Base):
     __tablename__ = "rerankers"
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     version = Column(String)
@@ -35,11 +41,14 @@ class Reranker(Base):
     normalize_method = Column(String)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
     settings = relationship("Setting", back_populates="reranker")
 
 
 class Taxonomy(Base):
     __tablename__ = "taxonomies"
+
     id = Column(Integer, primary_key=True, index=True)
     sheet_name = Column(String)
     taxonomy = Column(String, unique=True)
@@ -47,6 +56,7 @@ class Taxonomy(Base):
     source_file = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Relationships with cascade delete
     entries = relationship(
         "TaxonomyEntry",
         back_populates="taxonomy",
@@ -63,17 +73,21 @@ class Taxonomy(Base):
 
 class TaxonomyEntry(Base):
     __tablename__ = "taxonomy_entries"
+
     id = Column(Integer, primary_key=True, index=True)
     taxonomy_id = Column(Integer, ForeignKey("taxonomies.id", ondelete="CASCADE"))
     tag = Column(String)
     datatype = Column(String)
     reference = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
     taxonomy = relationship("Taxonomy", back_populates="entries")
 
 
 class Feedback(Base):
     __tablename__ = "feedbacks"
+
     id = Column(Integer, primary_key=True, index=True)
     taxonomy_id = Column(Integer, ForeignKey("taxonomies.id", ondelete="CASCADE"))
     query = Column(Text)
@@ -83,5 +97,6 @@ class Feedback(Base):
     is_custom = Column(Boolean, default=False)
     rank = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    taxonomy = relationship("Taxonomy", back_populates="feedbacks")
 
+    # Relationships
+    taxonomy = relationship("Taxonomy", back_populates="feedbacks")

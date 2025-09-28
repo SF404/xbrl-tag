@@ -34,7 +34,9 @@ RUN python -m pip install --no-cache-dir --index-url https://download.pytorch.or
     langchain-community \
     alembic \
     datasets \
-    langchain-google-genai
+    langchain-google-genai \
+    PyJWT \
+    bcrypt
 
 # Create non-root user and adjust ownership (do this AFTER pip install to keep installs system-wide)
 RUN useradd --create-home --shell /bin/bash app \

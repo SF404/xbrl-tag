@@ -16,6 +16,8 @@ class Config(BaseSettings):
     API_PREFIX: str = Field("/api/v1", env="API_PREFIX")
     DEBUG: bool = Field(True, env="DEBUG")
     HF_TOKEN: str = Field(..., env="HF_TOKEN")
+    
+    AUTH_BACKEND_ENDPOINT: str = Field(..., env="AUTH_BACKEND_ENDPOINT")
 
     DEVICE: str = Field("cpu", env="DEVICE")
 
@@ -45,6 +47,8 @@ class Config(BaseSettings):
     GEMINI_THINKING: int = Field(-1, env="GEMINI_THINKING") 
 
     # Misc settings
+    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60 * 24 * 8, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     ALLOW_ORIGINS: List[str] = Field([
         "http://localhost:3000",
         "http://localhost:5174",

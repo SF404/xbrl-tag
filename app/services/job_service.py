@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from app.core.errors import AppException, ErrorCode
 from app.core.config import get_config
-from app.core.index_cache import index_cache
+from app.managers.index_cache_manager import index_cache
 from app.db.session import SessionLocal
 from app.repositories.taxonomy import TaxonomyRepository
 from app.repositories.taxonomy_entry import TaxonomyEntryRepository

@@ -4,12 +4,14 @@ from datetime import date, timedelta, datetime
 from .base import BaseRepository
 from app.models import Feedback
 
+
 class FeedbackRepository(BaseRepository):
     def get(self, id: int) -> Optional[Feedback]:
         return self.db.query(Feedback).get(id)
-    
 
-    def list_by_taxonomy(self, taxonomy_id: int, offset: int = 0, limit: int = 200) -> List[Feedback]:
+    def list_by_taxonomy(
+        self, taxonomy_id: int, offset: int = 0, limit: int = 200
+    ) -> List[Feedback]:
         return (
             self.db.query(Feedback)
             .filter(Feedback.taxonomy_id == taxonomy_id)
@@ -19,17 +21,15 @@ class FeedbackRepository(BaseRepository):
             .all()
         )
 
-
-
     def list_filtered(
-            self,
-            taxonomy_id: Optional[int],
-            date_from: Optional[date],
-            date_to: Optional[date],
-            pagination: bool = True,
-            offset: int = 0,
-            limit: int = 200,
-        ) -> List[Feedback]:
+        self,
+        taxonomy_id: Optional[int],
+        date_from: Optional[date],
+        date_to: Optional[date],
+        pagination: bool = True,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> List[Feedback]:
         q = self.db.query(Feedback)
 
         if taxonomy_id is not None:
@@ -55,8 +55,6 @@ class FeedbackRepository(BaseRepository):
             )
         else:
             return q.order_by(Feedback.created_at.desc()).all()
-
-
 
     def create(
         self,

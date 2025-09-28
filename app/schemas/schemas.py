@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 from datetime import datetime, date
 
+
 # -------- System
 class HealthResponse(BaseModel):
     status: str
@@ -11,12 +12,14 @@ class HealthResponse(BaseModel):
     backend: str
     database_status: str
 
+
 # -------- Query
 class QueryRequest(BaseModel):
     query: str
     taxonomy: str
     k: int = Field(5, gt=0, le=100)
     rerank: bool = True
+
 
 class QueryResult(BaseModel):
     tag: str
@@ -25,14 +28,17 @@ class QueryResult(BaseModel):
     score: float
     rank: int
 
+
 class QueryResponse(BaseModel):
     query: str
     taxonomy: str
     results: List[QueryResult]
 
+
 # -------- Jobs / Index
 class BuildIndexRequest(BaseModel):
     taxonomy: str
+
 
 class JobStatusResponse(BaseModel):
     job_id: str
@@ -43,8 +49,10 @@ class JobStatusResponse(BaseModel):
     taxonomy: Optional[str]
     error: Optional[str]
 
+
 class JobsListResponse(BaseModel):
     jobs: Dict[str, JobStatusResponse]
+
 
 class CacheStatsResponse(BaseModel):
     cached_indices: int
@@ -53,6 +61,7 @@ class CacheStatsResponse(BaseModel):
     disk_keys: List[str]
     index_path: str
 
+
 # -------- Models
 class EmbedderResponse(BaseModel):
     id: int
@@ -60,8 +69,10 @@ class EmbedderResponse(BaseModel):
     version: str
     path: str
     is_active: bool
+
     class Config:
         from_attributes = True
+
 
 class RerankerResponse(BaseModel):
     id: int
@@ -70,16 +81,20 @@ class RerankerResponse(BaseModel):
     path: str
     normalize_method: str
     is_active: bool
+
     class Config:
         from_attributes = True
+
 
 class ActiveModelsResponse(BaseModel):
     active_embedder: Optional[EmbedderResponse]
     active_reranker: Optional[RerankerResponse]
 
+
 class UpdateSettingsRequest(BaseModel):
     active_embedder_id: Optional[int] = None
     active_reranker_id: Optional[int] = None
+
 
 # -------- Taxonomy
 class TaxonomyResponse(BaseModel):
@@ -88,8 +103,10 @@ class TaxonomyResponse(BaseModel):
     taxonomy: str
     description: Optional[str]
     source_file: Optional[str]
+
     class Config:
         from_attributes = True
+
 
 class TaxonomyEntryResponse(BaseModel):
     id: int
@@ -97,8 +114,10 @@ class TaxonomyEntryResponse(BaseModel):
     tag: str
     datatype: str
     reference: str
+
     class Config:
         from_attributes = True
+
 
 class AddEntryRequest(BaseModel):
     taxonomy_id: int
@@ -106,18 +125,22 @@ class AddEntryRequest(BaseModel):
     datatype: str
     reference: str
 
+
 class UpdateEntryRequest(BaseModel):
     tag: Optional[str] = None
     datatype: Optional[str] = None
     reference: Optional[str] = None
-    
+
+
 class UploadTaxonomyRequest(BaseModel):
     taxonomy: str
     description: str
     sheet_name: str
 
+
 class UploadTaxonomyResponse(BaseModel):
     taxonomy_id: int
+
 
 # -------- Feedback
 class FeedbackResponse(BaseModel):
@@ -130,8 +153,10 @@ class FeedbackResponse(BaseModel):
     is_custom: bool
     rank: Optional[int]
     created_at: datetime
+
     class Config:
         from_attributes = True
+
 
 class FeedbackCreateRequest(BaseModel):
     taxonomy: str
@@ -142,6 +167,7 @@ class FeedbackCreateRequest(BaseModel):
     is_custom: bool = False
     rank: Optional[int] = None
 
+
 class FeedbackUpdateRequest(BaseModel):
     id: int
     query: Optional[str] = None
@@ -150,7 +176,8 @@ class FeedbackUpdateRequest(BaseModel):
     is_correct: Optional[bool] = None
     is_custom: Optional[bool] = None
     rank: Optional[int] = None
-    
+
+
 class FeedbackListQuery(BaseModel):
     taxonomy: Optional[str] = None
     date_from: Optional[date] = Field(None, description="YYYY-MM-DD")
@@ -158,25 +185,26 @@ class FeedbackListQuery(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(200, ge=1, le=2000)
 
+
 # -------- Misc
 class MessageResponse(BaseModel):
     message: str
-    
-# --------- Training 
 
+
+# --------- Training
 class FineTuneEmbedderRequest(BaseModel):
     embedder_id: int
     date_from: Optional[date] = Field(None, description="YYYY-MM-DD")
     date_to: Optional[date] = Field(None, description="YYYY-MM-DD")
-    
+
+
 class FineTuneRerankerRequest(BaseModel):
     reranker_id: int
     date_from: Optional[date] = Field(None, description="YYYY-MM-DD")
     date_to: Optional[date] = Field(None, description="YYYY-MM-DD")
-    
-    
-# --------- Chatbot
 
+
+# --------- Chatbot
 class ChatRequest(BaseModel):
     prompt: str = Field("I'm new on this platform.", description="User prompt / question")
     session_id: Optional[str] = None
@@ -193,3 +221,30 @@ class ChatWidgetResponse(BaseModel):
     formatted_response: str
     timestamp: str
     session_id: Optional[str] = None
+
+
+# -------- Auth
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+    access_level: Optional[int] = None
+
+
+class User(BaseModel):
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    disabled: Optional[bool] = None
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
